@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Supply Chain Profit Margin</title>
+<style>
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  border: 1px solid #d7b5d8;
+  padding: 10px;
+  text-align: middle;
+  font-size: 14px;
+}
+
+th {
+  background-color: #f1eef6;
+  color: #ce1256;
+}
+
+tr:nth-child(even) {
+  background-color: #f1eef6;
+}
+
+tr:nth-child(odd) {
+  background-color: white;
+}
+
+body {
+  font-family: sans-serif;
+  margin: 20px;
+  background-color: white;
+}
+
+h2 {
+  color: #df65b0;
+}
+
+.svg {
+  width: 100%;
+  height: auto;
+}
+
+.line {
+  fill: none;
+  stroke-width: 2px;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: black;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  font-family: sans-serif;
+  font-size: 11px;
+}
+</style>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+</head>
+<body>
+
+<h2>Supply Chain Profit Margin</h2>
+
+<table id="profitTable">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>EstimatedCost</th>
+      <th>RawMaterial</th>
+      <th>Workmanship</th>
+      <th>Storage</th>
+      <th>ActualCost</th>
+      <th>SoldPrice</th>
+      <th>MarginOfProfit</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+
+<svg viewBox="0 0 1000 800"></svg>
+
+<script>
+  async function processData() {
+    try {
+      const response = await fetch('data_sample.csv');
+      const csvText = await response.text();
+      const rows = csvText.split('\n').slice(1);
+
+      const tableBody = document.getElementById('profitTable').querySelector('tbody');
+      const data = [];
+
+      rows.forEach(row => {
+        const columns = row.split(',');
+        if (columns.length === 5) {
+          const date = columns[0].trim();
+          const estimatedCost = parseFloat(columns[1].trim());
+          const rawMaterial = parseFloat(columns[2].trim());
+          const workmanship = parseFloat(columns[3].trim());
+          const storage = parseFloat(columns[4].trim());
+
+          const actualCost = rawMaterial + workmanship + storage;
+          const soldPrice = estimatedCost * 1.1;
+          const marginOfProfit = soldPrice - actualCost;
+
+          data.push({
+            date: d3.timeParse('%Y-%m-%d')(date),
+            estimatedCost: estimatedCost,
+            actualCost: actualCost,
+            soldPrice: soldPrice,
+            marginOfProfit: marginOfProfit
+          });
+
+          const newRow = tableBody.insertRow();
+          newRow.insertCell().textContent = date;
+          newRow.insertCell().textContent = estimatedCost.toFixed(2);
+          newRow.insertCell().textContent = rawMaterial.toFixed(2);
+          newRow.insertCell().textContent = workmanship.toFixed(2);
+          newRow.insertCell().textContent = storage.toFixed(2);
+          newRow.insertCell().textContent = actualCost.toFixed(2);
+          newRow.insertCell().textContent = soldPrice.toFixed(2);
+          newRow.insertCell().textContent = marginOfProfit.toFixed(2);
+        }
+      });
+
+      createChart(data);
+
+    } catch (error) {
+      console.error('Error processing CSV:', error);
+      alert('Error loading or processing CSV data. Check console for details.');
+    }
+  }
+
+  function createChart(data) {
+    const svg = d3.select('svg');
+    const margin = { top: 20, right: 80, bottom: 30, left: 50 };
+    const width = +svg.attr('viewBox').split(' ')[2] - margin.left - margin.right;
+    const height = +svg.attr('viewBox').split(' ')[3] - margin.top - margin.bottom;
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleTime().range([0, width]);
+    const y = d3.scaleLinear().range([height, 0]);
+
+    const colors = d3.scaleOrdinal(d3.schemeCategory10);
+    const lines = [
+      { id: 'estimatedCost', label: 'Estimated Cost', color: colors(0) },
+      { id: 'actualCost', label: 'Actual Cost Price', color: colors(1) },
+      { id: 'soldPrice', label: 'Sold Price', color: colors(2) },
+      { id: 'marginOfProfit', label: 'Margin of Profit', color: colors(3) }
+    ];
+
+    //x&Y
+x.domain(d3.extent(data, d => d.date));
+
+const yMin = d3.min(lines, line => d3.min(data, d => d[line.id]));
+const yMax = d3.max(lines, line => d3.max(data, d => d[line.id]));
+y.domain([yMin, yMax]);
+
+// Create the line generator for each dataset
+lines.forEach(lineData => {
+  const lineGenerator = d3.line()
+    .x(d => x(d.date))
+    .y(d => y(d[lineData.id])); // Access the correct line data
+
+  g.append('path')
+    .datum(data)
+    .attr('class', 'line')
+    .attr('id', `line-${lineData.id}`)
+    .attr('d', lineGenerator)
+    .style('stroke', lineData.color)
+    .style('fill', 'none')
+    .style('stroke-width', 2);
+});
+
+    g.append('g')
+      .attr('transform', `translate(0,${height})`)
+      .call(d3.axisBottom(x));
+
+    g.append('g')
+      .call(d3.axisLeft(y));
+
+    // Create the legend for the lines
+    const legend = g.append('g')
+      .attr('font-family', 'sans-serif')
+      .attr('font-size', 10)
+      .attr('text-anchor', 'end')
+      .selectAll('g')
+      .data(lines)
+      .enter().append('g')
+      .attr('transform', (d, i) => `translate(0,${i * 20})`);
+
+    legend.append('rect')
+      .attr('x', width - 19)
+      .attr('width', 19)
+      .attr('height', 19)
+      .attr('fill', d => d.color);
+
+    legend.append('text')
+      .attr('x', width - 24)
+      .attr('y', 9.5)
+      .attr('dy', '0.32em')
+      .text(d => d.label);
+  }
+  processData();
+</script>
+
+</body>
+</html>
