@@ -11,7 +11,7 @@ table {
 th, td {
   border: 1px solid #d7b5d8;
   padding: 10px;
-  text-align: middle;
+  text-align: left; /* Changed to left for better readability */
   font-size: 14px;
 }
 
@@ -37,9 +37,15 @@ body {
 h2 {
   color: #df65b0;
 }
+h5 {
+  color: #df65b0;
+}
+h6 {
+  color: #df65b0;
+}
 
-.svg {
-  width: 100%;
+svg {
+  width: 80%;
   height: auto;
 }
 
@@ -51,7 +57,7 @@ h2 {
 .axis path,
 .axis line {
   fill: none;
-  stroke: black;
+  stroke: rgb(62, 30, 80);
   shape-rendering: crispEdges;
 }
 
@@ -65,18 +71,19 @@ h2 {
 <body>
 
 <h2>Supply Chain Profit Margin</h2>
+<h5> Line chart: Line generator - Part Two</h5>
 
 <table id="profitTable">
   <thead>
     <tr>
       <th>Date</th>
-      <th>EstimatedCost</th>
-      <th>RawMaterial</th>
+      <th>Estimated_Cost</th>
+      <th>Raw_Material</th>
       <th>Workmanship</th>
       <th>Storage</th>
-      <th>ActualCost</th>
-      <th>SoldPrice</th>
-      <th>MarginOfProfit</th>
+      <th>Actual_Cost</th>
+      <th>Sold_Price</th>
+      <th>Margin_Of_Profit</th>
     </tr>
   </thead>
   <tbody>
@@ -98,33 +105,33 @@ h2 {
       rows.forEach(row => {
         const columns = row.split(',');
         if (columns.length === 5) {
-          const date = columns[0].trim();
-          const estimatedCost = parseFloat(columns[1].trim());
-          const rawMaterial = parseFloat(columns[2].trim());
-          const workmanship = parseFloat(columns[3].trim());
-          const storage = parseFloat(columns[4].trim());
+          const date = columns[0].trim(); 
+          const Estimated_Cost = parseFloat(columns[1].trim());
+          const Raw_Material = parseFloat(columns[2].trim());
+          const Workmanship = parseFloat(columns[3].trim());
+          const Storage = parseFloat(columns[4].trim());
 
-          const actualCost = rawMaterial + workmanship + storage;
-          const soldPrice = estimatedCost * 1.1;
-          const marginOfProfit = soldPrice - actualCost;
+          const Actual_Cost = Raw_Material + Workmanship + Storage;
+          const Sold_Price = Estimated_Cost * 1.1;
+          const Margin_Of_Profit = Sold_Price - Actual_Cost;
 
           data.push({
             date: d3.timeParse('%Y-%m-%d')(date),
-            estimatedCost: estimatedCost,
-            actualCost: actualCost,
-            soldPrice: soldPrice,
-            marginOfProfit: marginOfProfit
+            Estimated_Cost: Estimated_Cost,
+            Actual_Cost: Actual_Cost,
+            Sold_Price: Sold_Price,
+            Margin_Of_Profit: Margin_Of_Profit
           });
 
           const newRow = tableBody.insertRow();
-          newRow.insertCell().textContent = date;
-          newRow.insertCell().textContent = estimatedCost.toFixed(2);
-          newRow.insertCell().textContent = rawMaterial.toFixed(2);
-          newRow.insertCell().textContent = workmanship.toFixed(2);
-          newRow.insertCell().textContent = storage.toFixed(2);
-          newRow.insertCell().textContent = actualCost.toFixed(2);
-          newRow.insertCell().textContent = soldPrice.toFixed(2);
-          newRow.insertCell().textContent = marginOfProfit.toFixed(2);
+          newRow.insertCell().textContent = date; 
+          newRow.insertCell().textContent = '$' + Estimated_Cost.toFixed(2);
+          newRow.insertCell().textContent = '$' + Raw_Material.toFixed(2);
+          newRow.insertCell().textContent = '$' + Workmanship.toFixed(2);
+          newRow.insertCell().textContent = '$' + Storage.toFixed(2);
+          newRow.insertCell().textContent = '$' + Actual_Cost.toFixed(2);
+          newRow.insertCell().textContent = '$' + Sold_Price.toFixed(2);
+          newRow.insertCell().textContent = '$' + Margin_Of_Profit.toFixed(2);
         }
       });
 
@@ -148,46 +155,46 @@ h2 {
 
     const colors = d3.scaleOrdinal(d3.schemeCategory10);
     const lines = [
-      { id: 'estimatedCost', label: 'Estimated Cost', color: colors(0) },
-      { id: 'actualCost', label: 'Actual Cost Price', color: colors(1) },
-      { id: 'soldPrice', label: 'Sold Price', color: colors(2) },
-      { id: 'marginOfProfit', label: 'Margin of Profit', color: colors(3) }
+      { id: 'Estimated_Cost', label: 'Estimated_Cost', color: colors(0) },
+      { id: 'Actual_Cost', label: 'Actual_Cost', color: colors(1) },
+      { id: 'Sold_Price', label: 'Sold_Price', color: colors(2) },
+      { id: 'Margin_Of_Profit', label: 'Margin_Of_Profit', color: colors(3) }
     ];
 
     //x&Y
-x.domain(d3.extent(data, d => d.date));
+    x.domain(d3.extent(data, d => d.date));
 
-const yMin = d3.min(lines, line => d3.min(data, d => d[line.id]));
-const yMax = d3.max(lines, line => d3.max(data, d => d[line.id]));
-y.domain([yMin, yMax]);
+    const yMin = d3.min(lines, line => d3.min(data, d => d[line.id]));
+    const yMax = d3.max(lines, line => d3.max(data, d => d[line.id]));
+    y.domain([yMin, yMax]);
 
-// Create the line generator for each dataset
-lines.forEach(lineData => {
-  const lineGenerator = d3.line()
-    .x(d => x(d.date))
-    .y(d => y(d[lineData.id])); // Access the correct line data
+    // line generator 
+    lines.forEach(lineData => {
+      const lineGenerator = d3.line()
+        .x(d => x(d.date))
+        .y(d => y(d[lineData.id])); 
 
-  g.append('path')
-    .datum(data)
-    .attr('class', 'line')
-    .attr('id', `line-${lineData.id}`)
-    .attr('d', lineGenerator)
-    .style('stroke', lineData.color)
-    .style('fill', 'none')
-    .style('stroke-width', 2);
-});
+      g.append('path')
+        .datum(data)
+        .attr('class', 'line')
+        .attr('id', `line-${lineData.id}`)
+        .attr('d', lineGenerator)
+        .style('stroke', lineData.color)
+        .style('fill', 'none')
+        .style('stroke-width', 2);
+    });
 
     g.append('g')
       .attr('transform', `translate(0,${height})`)
       .call(d3.axisBottom(x));
 
     g.append('g')
-      .call(d3.axisLeft(y));
+      .call(d3.axisLeft(y).tickFormat(d3.format("$.2f"))); // Add $ and format to 2 decimal places
 
-    // Create the legend for the lines
+    //legend for each line
     const legend = g.append('g')
       .attr('font-family', 'sans-serif')
-      .attr('font-size', 10)
+      .attr('font-size', 15)
       .attr('text-anchor', 'end')
       .selectAll('g')
       .data(lines)
@@ -195,19 +202,21 @@ lines.forEach(lineData => {
       .attr('transform', (d, i) => `translate(0,${i * 20})`);
 
     legend.append('rect')
-      .attr('x', width - 19)
-      .attr('width', 19)
-      .attr('height', 19)
+      .attr('x', width - 12)
+      .attr('width', 12)
+      .attr('height', 12)
       .attr('fill', d => d.color);
 
     legend.append('text')
-      .attr('x', width - 24)
+      .attr('x', width - 30)
       .attr('y', 9.5)
       .attr('dy', '0.32em')
       .text(d => d.label);
   }
   processData();
 </script>
+<h6>
+  CIS 568-7101: Data Visualization - On-Line (2025 Spring CE1) Shams Alfaris </h6>
 
 </body>
 </html>
